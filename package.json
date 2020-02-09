@@ -1,0 +1,27 @@
+{
+  "name": "part3-puhelinluettelo-backend",
+  "version": "1.0.0",
+  "description": "Puhelinluettelon backend",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Asd396/part3-puhelinluettelo-backend.git"
+  },
+  "author": "Leo Kotipalo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Asd396/part3-puhelinluettelo-backend/issues"
+  },
+  "homepage": "https://github.com/Asd396/part3-puhelinluettelo-backend#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  }
+}
