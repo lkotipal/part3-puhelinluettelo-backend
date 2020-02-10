@@ -2,19 +2,20 @@ require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
+
 const app = express()
 const Person = require('./models/person')
+
 app.use(cors())
 app.use(express.static('build'))
 app.use(express.json())
 
-morgan.token('body', function (req, res) {
-  if (req.method === 'POST')
-    return JSON.stringify(req.body)
-})
+morgan.token('body', (req) => (
+  req.method === 'POST' ? JSON.stringify(req.body) : null
+))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
-//let persons = [
+// let persons = [
 //  {
 //    "name": "Arto Hellas",
 //    "number": "040-123456",
@@ -35,7 +36,7 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :b
 //    "number": "39-23-6423122",
 //    "id": 4
 //  }
-//]
+// ]
 
 app.get('/', (req, res) => {
   res.send('<h1>Hello World!</h1>')
@@ -43,44 +44,44 @@ app.get('/', (req, res) => {
 
 app.get('/info', (req, res, next) => {
   Person.find({})
-    .then(people => {
+    .then((people) => {
       res.write(`<p>Phonebook has info for ${people.length} people</p>`)
       res.write(`<p>${new Date()}</p>`)
       res.end()
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
 
-app.get('/api/persons', (request, response, next) => {
+app.get('/api/persons', (req, res, next) => {
   Person.find({})
-    .then(people => {
-      response.json(people)
+    .then((people) => {
+      res.json(people)
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
 
-app.get('/api/persons/:id', (request, response, next) => {
-  Person.findById(request.params.id)
-    .then(person => {
+app.get('/api/persons/:id', (req, res, next) => {
+  Person.findById(req.params.id)
+    .then((person) => {
       if (person) {
-        response.json(person.toJSON())
+        res.json(person.toJSON())
       } else {
-        response.status(404).end()
+        res.status(404).end()
       }
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
 
-app.delete('/api/persons/:id', (request, response, next) => {
-  Person.findByIdAndRemove(request.params.id)
-    .then(result => {
-      response.status(204).end()
+app.delete('/api/persons/:id', (req, res, next) => {
+  Person.findByIdAndRemove(req.params.id)
+    .then(() => {
+      res.status(204).end()
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
 
-app.post('/api/persons', (request, response, next) => {
-  const body = request.body
+app.post('/api/persons', (req, res, next) => {
+  const { body } = req
 
   const person = new Person({
     name: body.name,
@@ -89,15 +90,15 @@ app.post('/api/persons', (request, response, next) => {
 
   person
     .save()
-    .then(savedPerson => savedPerson.toJSON())
-    .then(savedAndFormattedPerson => {
-      response.json(savedAndFormattedPerson)
+    .then((savedPerson) => savedPerson.toJSON())
+    .then((savedAndFormattedPerson) => {
+      res.json(savedAndFormattedPerson)
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
 
-app.put('/api/persons/:id', (request, response, next) => {
-  const body = request.body
+app.put('/api/persons/:id', (req, res, next) => {
+  const { body } = req
 
   const person = {
     name: body.name,
@@ -105,35 +106,39 @@ app.put('/api/persons/:id', (request, response, next) => {
   }
 
   Person
-    .findByIdAndUpdate(request.params.id, person, {new: true, upsert:true, runValidators:true, context: 'query'})
-    .then(updatedPerson => updatedPerson.toJSON())
-    .then(updatedAndFormattedPerson => {
-      response.json(updatedAndFormattedPerson)
+    .findByIdAndUpdate(req.params.id, person, {
+      new: true, upsert: true, runValidators: true, context: 'query',
     })
-    .catch(error => next(error))
+    .then((updatedPerson) => updatedPerson.toJSON())
+    .then((updatedAndFormattedPerson) => {
+      res.json(updatedAndFormattedPerson)
+    })
+    .catch((error) => next(error))
 })
 
-const unknownEndpoint = (request, response) => {
-  response.status(404).send({ error: 'unknown endpoint' })
+const unknownEndpoint = (req, res) => {
+  res.status(404).send({ error: 'unknown endpoint' })
 }
 
 app.use(unknownEndpoint)
 
-const errorHandler = (error, request, response, next) => {
+const errorHandler = (error, req, res, next) => {
   console.error(error.message)
 
-  if (error.name === 'CastError' && error.kind == 'ObjectId') {
-    return response.status(400).send({ error: 'malformatted id' })
-  } else if (error.name === 'ValidationError') {
-    return response.status(400).json({error: error.message})
+  if (error.name === 'CastError' && error.kind === 'ObjectId') {
+    return res.status(400).send({ error: 'malformatted id' })
   }
 
-  next(error)
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({ error: error.message })
+  }
+
+  return next(error)
 }
 
 app.use(errorHandler)
 
-const PORT = process.env.PORT
+const { PORT } = process.env
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
