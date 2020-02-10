@@ -105,10 +105,10 @@ app.put('/api/persons/:id', (request, response, next) => {
   }
 
   Person
-    .findByIdAndUpdate(request.params.id, person, { new: true })
+    .findByIdAndUpdate(request.params.id, person, {new: true, upsert:true, runValidators:true, context: 'query'})
     .then(updatedPerson => updatedPerson.toJSON())
     .then(updatedAndFormattedPerson => {
-      response.json(updatedAndFormattedPerson.toJSON())
+      response.json(updatedAndFormattedPerson)
     })
     .catch(error => next(error))
 })
